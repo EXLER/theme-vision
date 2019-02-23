@@ -50,8 +50,8 @@ function fish_prompt
 	set -g __fish_git_prompt_char_conflictedstate " ✖"
 	set -g __fish_git_prompt_char_untrackedfiles ' …'
 	set -g __fish_git_prompt_char_stashstate ' ↩'
-	set -g __fish_git_prompt_char_upstream_ahead ' +'
-	set -g __fish_git_prompt_char_upstream_behind ' -'
+	set -g __fish_git_prompt_char_upstream_ahead ' ↑'
+	set -g __fish_git_prompt_char_upstream_behind ' ↓'
 
 	# Line 1
 	echo '☰ '$orange$USER$white' in '$orange(pwd | sed "s,^$HOME,~,")$normal (__fish_git_prompt " (%s)")
