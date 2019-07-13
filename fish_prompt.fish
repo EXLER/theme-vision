@@ -5,59 +5,83 @@
 # source: https://github.com/EXLER/theme-vision
 # ------------
 
+set -g pad " "
+
+# Function to show a segment
+function prompt_segment -d "Function to show a segment"
+	# Get colors
+	set -l bg $argv[1]
+	set -l fg $argv[2]
+
+	# Set 'em
+	set_color -b $bg
+	set_color $fg
+
+	# Print text
+	if [ -n "$argv[3]" ]
+		echo -n -s $argv[3]
+	end
+end
+
+# Show current status
+function show_status -d "Function to show the current status"
+  	prompt_segment normal white "» "
+
+  	if [ $RETVAL -ne 0 ]
+    	prompt_segment red white " ▲ "
+    	set pad ""
+    end
+  	if [ -n "$SSH_CLIENT" ]
+      	prompt_segment blue white " SSH: "
+      	set pad ""
+	end
+end
+
+# Show user if not in default users
+function show_user -d "Show user"
+  	if not contains $USER $default_user; or test -n "$SSH_CLIENT"
+      	set -l host (hostname -s)
+	  	set -l who (whoami)
+	  	prompt_segment normal yellow " $who"
+
+    	# Skip @ bit if hostname == username
+    	if [ "$USER" != "$HOST" ]
+      		prompt_segment normal white "@"
+      		prompt_segment normal yellow "$host "
+      		set pad ""
+    	end
+  	end
+end
+
+# Show directory
+function show_pwd -d "Show the current directory"
+	set -l pwd
+	if [ (string match -r '^' $PWD) ]
+		set pwd (string replace -r '^''($|/)' '≫ $1' $PWD)
+	else
+		set pwd (prompt_pwd)
+	end
+	prompt_segment normal blue "$pad$pwd "
+end
+
+# Show prompt w/ privilege cue
+function show_prompt -d "Shows prompt with cue for current priv"
+	set -l uid (id -u $USER)
+	if [ $uid -eq 0 ]
+		prompt_segment red white " ! "
+		set_color normal
+		echo -n -s " "
+	else
+		prompt_segment normal white " \$ "
+	end
+
+	set_color normal
+end
+
 function fish_prompt
-	# Cache exit status
-	set -l last_status $status
-
-	# Set this once
-	if not set -q __fish_prompt_hostname
-		set -g __fish_prompt_hostname (hostname|cut -d . -f 1)
-	end
-	if not set -q __fish_prompt_char
-		switch (id -u)
-			case 0
-				set -g __fish_prompt_char '$'
-			case '*'
-				set -g __fish_prompt_char '→'
-		end
-	end
-
-	# Set color variables
-	set -l normal (set_color normal)
-  	set -l white (set_color FFFFFF)
-  	set -l yellow (set_color fce205)
-  	set -l orange (set_color ffa500)
-  	set -l hotpink (set_color df005f)
-
-	# Configure __fish_git_prompt
-  	set -g __fish_git_prompt_char_stateseparator ''
-  	set -g __fish_git_prompt_color white
-  	set -g __fish_git_prompt_color_prefix white
-  	set -g __fish_git_prompt_color_suffix white
-  	set -g __fish_git_prompt_color_dirtystate purple
-	set -g __fish_git_prompt_color_stagedstate blue
-	set -g __fish_git_prompt_color_invalidstate df005f
-	set -g __fish_git_prompt_color_untrackedfiles df005f
-	set -g __fish_git_prompt_color_cleanstate green
-  	set -g __fish_git_prompt_showdirtystate true
-  	set -g __fish_git_prompt_showuntrackedfiles true
-  	set -g __fish_git_prompt_showstashstate true
-  	set -g __fish_git_prompt_show_informative_status true 
-
-  	set -g __fish_git_prompt_char_cleanstate ' ✓'
-	set -g __fish_git_prompt_char_dirtystate ' +'
-	set -g __fish_git_prompt_char_stagedstate ' ·'
-	set -g __fish_git_prompt_char_conflictedstate " ✖"
-	set -g __fish_git_prompt_char_untrackedfiles ' …'
-	set -g __fish_git_prompt_char_stashstate ' ↩'
-	set -g __fish_git_prompt_char_upstream_ahead ' ↑'
-	set -g __fish_git_prompt_char_upstream_behind ' ↓'
-
-	# Line 1
-	echo '☰ '$orange$USER$white' in '$orange(pwd | sed "s,^$HOME,~,")$normal (__fish_git_prompt " (%s)")
-
-	# Line 2
-	echo -n $white$__fish_prompt_char $normal
-
-
+	set -g RETVAL $status
+	show_status
+	show_user
+	show_pwd
+	show_prompt
 end
